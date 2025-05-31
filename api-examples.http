@@ -1,0 +1,174 @@
+# api-examples.http
+# Примеры API запросов для тестирования
+# Можно использовать в VS Code с расширением REST Client
+
+@baseUrl = http://localhost:3000/api/v1
+@contentType = application/json
+
+### Переменные для тестирования
+@testPhone = +79991234567
+@testOtpCode = 1234
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### Health Check
+GET {{baseUrl}}/../health
+
+### Ping
+GET {{baseUrl}}/../health/ping
+
+# ==================== АВТОРИЗАЦИЯ ====================
+
+### Запрос OTP кода
+POST {{baseUrl}}/auth/otp/request
+Content-Type: {{contentType}}
+
+{
+  "phone": "{{testPhone}}",
+  "deviceInfo": {
+    "platform": "iOS",
+    "version": "15.0",
+    "browser": "Safari"
+  }
+}
+
+### Подтверждение OTP кода
+POST {{baseUrl}}/auth/otp/verify
+Content-Type: {{contentType}}
+
+{
+  "phone": "{{testPhone}}",
+  "code": "{{testOtpCode}}",
+  "deviceInfo": {
+    "platform": "iOS",
+    "version": "15.0",
+    "browser": "Safari"
+  }
+}
+
+### Обновление токенов
+POST {{baseUrl}}/auth/token/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Создание анонимной сессии
+POST {{baseUrl}}/auth/anonymous
+Content-Type: {{contentType}}
+
+{
+  "deviceInfo": {
+    "platform": "Android",
+    "version": "12",
+    "browser": "Chrome"
+  }
+}
+
+### Выход из системы
+DELETE {{baseUrl}}/auth/logout
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Выход со всех устройств
+POST {{baseUrl}}/auth/logout/all
+Authorization: Bearer {{accessToken}}
+
+# ==================== ПРОФИЛЬ ====================
+
+### Получить свой профиль
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{accessToken}}
+
+### Обновить свой профиль
+PUT {{baseUrl}}/users/profile
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "firstName": "Иван",
+  "lastName": "Иванов",
+  "email": "ivan@example.com"
+}
+
+# ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ====================
+# (Доступно только для менеджеров и администраторов)
+
+### Получить список пользователей
+GET {{baseUrl}}/users?page=1&limit=20&sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+### Поиск пользователей
+GET {{baseUrl}}/users?search=Иван&role=CUSTOMER
+Authorization: Bearer {{accessToken}}
+
+### Получить статистику пользователей (только админ)
+GET {{baseUrl}}/users/stats
+Authorization: Bearer {{accessToken}}
+
+### Получить пользователя по ID
+GET {{baseUrl}}/users/123e4567-e89b-12d3-a456-426614174000
+Authorization: Bearer {{accessToken}}
+
+### Создать пользователя (только админ)
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "phone": "+79991234599",
+  "role": "CUSTOMER",
+  "firstName": "Новый",
+  "lastName": "Пользователь",
+  "email": "new@example.com"
+}
+
+### Обновить пользователя
+PUT {{baseUrl}}/users/123e4567-e89b-12d3-a456-426614174000
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "firstName": "Обновленное",
+  "lastName": "Имя",
+  "email": "updated@example.com",
+  "role": "MANAGER",
+  "isActive": true
+}
+
+### Удалить пользователя (только админ)
+DELETE {{baseUrl}}/users/123e4567-e89b-12d3-a456-426614174000
+Authorization: Bearer {{accessToken}}
+
+# ==================== ТЕСТОВЫЕ СЦЕНАРИИ ====================
+
+### Сценарий 1: Полный цикл авторизации
+# 1. Запросить OTP код
+# 2. Подтвердить OTP код (получить токены)
+# 3. Использовать access токен для запросов
+# 4. Обновить токены когда истечет access токен
+# 5. Выйти из системы
+
+### Сценарий 2: Работа с профилем
+# 1. Авторизоваться
+# 2. Получить свой профиль
+# 3. Обновить имя и email
+# 4. Проверить изменения
+
+### Сценарий 3: Управление пользователями (менеджер)
+# 1. Авторизоваться как менеджер
+# 2. Получить список пользователей
+# 3. Найти конкретного пользователя
+# 4. Обновить данные пользователя
+
+### Сценарий 4: Администрирование (админ)
+# 1. Авторизоваться как администратор
+# 2. Получить статистику
+# 3. Создать нового менеджера
+# 4. Изменить роль пользователя
+# 5. Деактивировать пользователя

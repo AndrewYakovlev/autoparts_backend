@@ -1,0 +1,132 @@
+# docker-compose.yml
+# Docker Compose для локальной разработки
+
+version: '3.9'
+
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:16-alpine
+    container_name: autoparts-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: autoparts
+      POSTGRES_PASSWORD: autoparts_password
+      POSTGRES_DB: autoparts_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autoparts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - autoparts-network
+
+  # Redis для кеширования (опционально)
+  redis:
+    image: redis:7-alpine
+    container_name: autoparts-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - autoparts-network
+
+  # Backend приложение
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: autoparts-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://autoparts:autoparts_password@postgres:5432/autoparts_db?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-your-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-refresh-secret}
+      JWT_ANONYMOUS_SECRET: ${JWT_ANONYMOUS_SECRET:-your-anonymous-secret}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./uploads:/app/uploads # Для загруженных файлов
+    networks:
+      - autoparts-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node dist/main
+      "
+
+  # Prisma Studio для управления БД (только для разработки)
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: build
+    container_name: autoparts-prisma-studio
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://autoparts:autoparts_password@postgres:5432/autoparts_db?schema=public
+    ports:
+      - "5555:5555"
+    networks:
+      - autoparts-network
+    command: npx prisma studio
+    profiles:
+      - dev
+
+  # pgAdmin для управления PostgreSQL (только для разработки)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: autoparts-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@autoparts.com
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - autoparts-network
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  autoparts-network:
+    driver: bridge
+    name: autoparts-network

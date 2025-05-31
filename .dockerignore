@@ -1,0 +1,82 @@
+# .dockerignore
+# Файлы и папки, которые не нужно копировать в Docker образ
+
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+dist/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Testing
+coverage/
+.nyc_output/
+test/
+jest.config.js
+.jest/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Prisma
+prisma/migrations/dev/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.eslintrc*
+.prettierrc*
+.editorconfig
+.nvmrc
