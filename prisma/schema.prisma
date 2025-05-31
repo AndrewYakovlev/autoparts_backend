@@ -1,0 +1,104 @@
+// prisma/schema.prisma
+// Схема базы данных для интернет-магазина автозапчастей
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Роли пользователей в системе
+enum Role {
+  CUSTOMER // Покупатель
+  MANAGER // Менеджер
+  ADMIN // Администратор
+}
+
+// Статус OTP кода
+enum OtpStatus {
+  PENDING // Ожидает использования
+  USED // Использован
+  EXPIRED // Истек
+}
+
+// Основная таблица пользователей
+model User {
+  id          String    @id @default(uuid())
+  phone       String    @unique // Номер телефона в формате +7XXXXXXXXXX
+  role        Role      @default(CUSTOMER)
+  firstName   String?   @map("first_name")
+  lastName    String?   @map("last_name")
+  email       String?
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  otpCodes      OtpCode[]
+  refreshTokens RefreshToken[]
+
+  @@index([phone])
+  @@index([role])
+  @@map("users")
+}
+
+// Анонимные пользователи для неавторизованных действий
+model AnonymousUser {
+  id             String   @id @default(uuid())
+  sessionId      String   @unique @map("session_id") // Уникальный идентификатор сессии
+  deviceInfo     Json?    @map("device_info") // Информация об устройстве
+  ipAddress      String?  @map("ip_address")
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  expiresAt      DateTime @map("expires_at") // Истекает через 30 дней
+
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@map("anonymous_users")
+}
+
+// OTP коды для авторизации
+model OtpCode {
+  id           String    @id @default(uuid())
+  userId       String?   @map("user_id")
+  phone        String // Номер телефона
+  code         String // 4-значный код
+  status       OtpStatus @default(PENDING)
+  attemptCount Int       @default(0) @map("attempt_count") // Количество попыток ввода
+  ipAddress    String?   @map("ip_address")
+  userAgent    String?   @map("user_agent")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  expiresAt    DateTime  @map("expires_at") // Истекает через 5 минут
+  usedAt       DateTime? @map("used_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phone, status])
+  @@index([code, phone])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+// Refresh токены для обновления JWT
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  token      String    @unique // Хэш токена
+  deviceInfo Json?     @map("device_info") // Информация об устройстве
+  ipAddress  String?   @map("ip_address")
+  userAgent  String?   @map("user_agent")
+  isRevoked  Boolean   @default(false) @map("is_revoked")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  expiresAt  DateTime  @map("expires_at") // Истекает через 90 дней
+  lastUsedAt DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
