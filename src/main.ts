@@ -6,7 +6,7 @@ import { ValidationPipe, VersioningType } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import helmet from 'helmet'
-import * as compression from 'compression'
+import compression from 'compression'
 import { AppModule } from './app.module'
 import { PrismaService } from 'prisma/prisma.service'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
@@ -21,9 +21,12 @@ async function bootstrap() {
 
   // Получаем сервис конфигурации
   const configService = app.get(ConfigService)
-  const port = configService.get<number>('app.port')
-  const apiPrefix = configService.get<string>('app.apiPrefix')
-  const corsOptions = configService.get('cors')
+  const port = configService.get<number>('app.port') || 3000
+  const apiPrefix = configService.get<string>('app.apiPrefix') || 'api'
+  const corsOptions = configService.get('cors') || {
+    origin: true,
+    credentials: true,
+  }
 
   // Применяем глобальные middleware
   app.use(helmet()) // Защита от известных уязвимостей
@@ -54,7 +57,7 @@ async function bootstrap() {
   )
 
   // Применяем глобальные фильтры
-  app.useGlobalFilters(new HttpExceptionFilter())
+  app.useGlobalFilters(new HttpExceptionFilter(configService))
 
   // Применяем глобальные interceptors
   app.useGlobalInterceptors(new LoggingInterceptor(), new TransformInterceptor())
@@ -62,9 +65,12 @@ async function bootstrap() {
   // Настраиваем Swagger
   if (configService.get<boolean>('swagger.enabled')) {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle(configService.get<string>('swagger.title'))
-      .setDescription(configService.get<string>('swagger.description'))
-      .setVersion(configService.get<string>('swagger.version'))
+      .setTitle(configService.get<string>('swagger.title') || 'Auto Parts API')
+      .setDescription(
+        configService.get<string>('swagger.description') ||
+          'API documentation for Auto Parts application',
+      )
+      .setVersion(configService.get<string>('swagger.version') || '1.0')
       .addBearerAuth(
         {
           type: 'http',
@@ -82,7 +88,7 @@ async function bootstrap() {
       .build()
 
     const document = SwaggerModule.createDocument(app, swaggerConfig)
-    const swaggerPath = configService.get<string>('swagger.path')
+    const swaggerPath = configService.get<string>('swagger.path') || 'docs'
     SwaggerModule.setup(swaggerPath, app, document, {
       swaggerOptions: {
         persistAuthorization: true,
@@ -102,7 +108,7 @@ async function bootstrap() {
   await app.listen(port)
 
   console.log(`🚀 Application is running on: http://localhost:${port}/${apiPrefix}`)
-  console.log(`🌍 Environment: ${configService.get<string>('app.env')}`)
+  console.log(`🌍 Environment: ${configService.get<string>('app.env') || 'development'}`)
 
   // В режиме разработки выводим дополнительную информацию
   if (configService.get<string>('app.env') === 'development') {

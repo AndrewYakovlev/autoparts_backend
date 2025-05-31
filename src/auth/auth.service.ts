@@ -215,9 +215,9 @@ export class AuthService {
         id: result.user.id,
         phone: result.user.phone,
         role: result.user.role,
-        firstName: result.user.firstName,
-        lastName: result.user.lastName,
-        email: result.user.email,
+        firstName: result.user.firstName ?? undefined,
+        lastName: result.user.lastName ?? undefined,
+        email: result.user.email ?? undefined,
       },
     }
   }
@@ -268,9 +268,9 @@ export class AuthService {
         id: tokenRecord.user.id,
         phone: tokenRecord.user.phone,
         role: tokenRecord.user.role,
-        firstName: tokenRecord.user.firstName,
-        lastName: tokenRecord.user.lastName,
-        email: tokenRecord.user.email,
+        firstName: tokenRecord.user.firstName ?? undefined,
+        lastName: tokenRecord.user.lastName ?? undefined,
+        email: tokenRecord.user.email ?? undefined,
       },
     }
   }
