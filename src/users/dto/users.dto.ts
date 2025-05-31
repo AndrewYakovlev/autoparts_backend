@@ -90,7 +90,7 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   @Transform(({ value }) => value?.trim())
-  phone: string
+  phone!: string
 
   @ApiProperty({
     description: 'Роль пользователя',
@@ -213,20 +213,20 @@ export class UserResponseDto {
     description: 'ID пользователя',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  id: string
+  id!: string
 
   @ApiProperty({
     description: 'Номер телефона',
     example: '+79991234567',
   })
-  phone: string
+  phone!: string
 
   @ApiProperty({
     description: 'Роль пользователя',
     enum: Role,
     example: Role.CUSTOMER,
   })
-  role: Role
+  role!: Role
 
   @ApiProperty({
     description: 'Имя пользователя',
@@ -253,7 +253,7 @@ export class UserResponseDto {
     description: 'Активен ли пользователь',
     example: true,
   })
-  isActive: boolean
+  isActive!: boolean
 
   @ApiProperty({
     description: 'Дата последнего входа',
@@ -266,13 +266,13 @@ export class UserResponseDto {
     description: 'Дата создания',
     example: '2024-01-01T00:00:00.000Z',
   })
-  createdAt: Date
+  createdAt!: Date
 
   @ApiProperty({
     description: 'Дата обновления',
     example: '2024-01-01T00:00:00.000Z',
   })
-  updatedAt: Date
+  updatedAt!: Date
 }
 
 // Response DTO для списка пользователей с пагинацией
@@ -281,29 +281,29 @@ export class UsersListResponseDto {
     description: 'Список пользователей',
     type: [UserResponseDto],
   })
-  data: UserResponseDto[]
+  data!: UserResponseDto[]
 
   @ApiProperty({
     description: 'Общее количество пользователей',
     example: 100,
   })
-  total: number
+  total!: number
 
   @ApiProperty({
     description: 'Текущая страница',
     example: 1,
   })
-  page: number
+  page!: number
 
   @ApiProperty({
     description: 'Количество элементов на странице',
     example: 20,
   })
-  limit: number
+  limit!: number
 
   @ApiProperty({
     description: 'Общее количество страниц',
     example: 5,
   })
-  totalPages: number
+  totalPages!: number
 }

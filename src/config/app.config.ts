@@ -4,7 +4,7 @@
 export default () => ({
   // Настройки приложения
   app: {
-    port: parseInt(process.env.PORT, 10) || 3000,
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : 3000,
     env: process.env.NODE_ENV || 'development',
     apiPrefix: process.env.API_PREFIX || 'api/v1',
   },
@@ -84,4 +84,4 @@ export default () => ({
     bcryptRounds: 10,
     phoneRegex: /^\+7\d{10}$/, // Формат российского номера телефона
   },
-});
+})

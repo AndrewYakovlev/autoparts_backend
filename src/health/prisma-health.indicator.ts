@@ -2,20 +2,36 @@
 // Индикатор здоровья для Prisma
 
 import { Injectable } from '@nestjs/common'
-import { HealthIndicator, HealthIndicatorResult, HealthCheckError } from '@nestjs/terminus'
+import { HealthIndicatorResult } from '@nestjs/terminus'
 import { PrismaService } from 'prisma/prisma.service'
 
 @Injectable()
-export class PrismaHealthIndicator extends HealthIndicator {
-  async pingCheck(key: string, prisma: PrismaService): Promise<HealthIndicatorResult> {
+export class PrismaHealthIndicator {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async pingCheck(key: string): Promise<HealthIndicatorResult> {
     try {
-      await prisma.$queryRaw`SELECT 1`
-      return this.getStatus(key, true)
+      await this.prisma.$queryRaw`SELECT 1`
+
+      // Возвращаем объект напрямую в правильном формате
+      return {
+        [key]: {
+          status: 'up',
+          message: 'Database is online',
+        },
+      }
     } catch (error) {
-      throw new HealthCheckError(
-        'Prisma check failed',
-        this.getStatus(key, false, { message: error.message }),
-      )
+      // Обработка ошибки с правильной типизацией
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+      // Возвращаем объект с статусом 'down'
+      return {
+        [key]: {
+          status: 'down',
+          message: 'Database is offline',
+          error: errorMessage,
+        },
+      }
     }
   }
 }

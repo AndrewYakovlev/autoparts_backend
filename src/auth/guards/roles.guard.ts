@@ -32,6 +32,9 @@ export class RolesGuard implements CanActivate {
     }
 
     // Проверяем, есть ли у пользователя требуемая роль
-    return requiredRoles.includes(jwtUser?.role)
+    if (!jwtUser?.role) {
+      return false
+    }
+    return requiredRoles.includes(jwtUser.role)
   }
 }

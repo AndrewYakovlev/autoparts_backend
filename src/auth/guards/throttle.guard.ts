@@ -3,13 +3,11 @@
 
 import { Injectable, ExecutionContext } from '@nestjs/common'
 import { ThrottlerGuard } from '@nestjs/throttler'
-import { Reflector } from '@nestjs/core'
 
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
-  constructor(reflector: Reflector) {
-    super({}, {}, reflector)
-  }
+  // Убираем конструктор полностью, так как родительский класс
+  // сам получит все необходимые зависимости через DI
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()

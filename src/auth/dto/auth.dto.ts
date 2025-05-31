@@ -26,7 +26,7 @@ export class RequestOtpDto {
     message: 'Номер телефона должен быть в формате +7XXXXXXXXXX',
   })
   @Transform(({ value }) => value?.trim())
-  phone: string
+  phone!: string
 
   @ApiProperty({
     description: 'Информация об устройстве (опционально)',
@@ -50,7 +50,7 @@ export class VerifyOtpDto {
     message: 'Номер телефона должен быть в формате +7XXXXXXXXXX',
   })
   @Transform(({ value }) => value?.trim())
-  phone: string
+  phone!: string
 
   @ApiProperty({
     description: '4-значный OTP код',
@@ -62,7 +62,7 @@ export class VerifyOtpDto {
   @IsNotEmpty()
   @Length(4, 4, { message: 'OTP код должен состоять из 4 цифр' })
   @Matches(/^\d{4}$/, { message: 'OTP код должен содержать только цифры' })
-  code: string
+  code!: string
 
   @ApiProperty({
     description: 'Информация об устройстве (опционально)',
@@ -82,7 +82,7 @@ export class RefreshTokenDto {
   })
   @IsString()
   @IsNotEmpty()
-  refreshToken: string
+  refreshToken!: string
 }
 
 // DTO для создания анонимной сессии
@@ -103,19 +103,19 @@ export class AuthResponseDto {
     description: 'Access токен для доступа к API',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  accessToken: string
+  accessToken!: string
 
   @ApiProperty({
     description: 'Refresh токен для обновления access токена',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  refreshToken: string
+  refreshToken!: string
 
   @ApiProperty({
     description: 'Время жизни access токена в секундах',
     example: 900,
   })
-  expiresIn: number
+  expiresIn!: number
 
   @ApiProperty({
     description: 'Тип токена',
@@ -133,7 +133,7 @@ export class AuthResponseDto {
       lastName: 'Иванов',
     },
   })
-  user: {
+  user!: {
     id: string
     phone: string
     role: string
@@ -149,13 +149,13 @@ export class RequestOtpResponseDto {
     description: 'Сообщение о статусе отправки',
     example: 'OTP код отправлен',
   })
-  message: string
+  message!: string
 
   @ApiProperty({
     description: 'Время до возможности повторной отправки в секундах',
     example: 180,
   })
-  resendAfter: number
+  resendAfter!: number
 
   @ApiProperty({
     description: 'OTP код (только в режиме разработки)',
@@ -171,17 +171,17 @@ export class AnonymousSessionResponseDto {
     description: 'Токен анонимной сессии',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
-  sessionToken: string
+  sessionToken!: string
 
   @ApiProperty({
     description: 'ID анонимной сессии',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  sessionId: string
+  sessionId!: string
 
   @ApiProperty({
     description: 'Время жизни сессии в секундах',
     example: 2592000, // 30 дней
   })
-  expiresIn: number
+  expiresIn!: number
 }

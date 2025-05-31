@@ -27,10 +27,10 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name)
 
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private eventEmitter: EventEmitter2,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // Запрос OTP кода
@@ -43,7 +43,9 @@ export class AuthService {
         phone,
         status: OtpStatus.PENDING,
         createdAt: {
-          gte: new Date(Date.now() - this.configService.get<number>('otp.resendTimeout')),
+          gte: new Date(
+            Date.now() - this.configService.get<number>('otp.resendTimeout', 3 * 60 * 1000),
+          ),
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -52,7 +54,7 @@ export class AuthService {
     if (recentOtp) {
       const timeLeft = Math.ceil(
         (recentOtp.createdAt.getTime() +
-          this.configService.get<number>('otp.resendTimeout') -
+          this.configService.get<number>('otp.resendTimeout', 3 * 60 * 1000) -
           Date.now()) /
           1000,
       )
@@ -61,7 +63,9 @@ export class AuthService {
 
     // Генерируем OTP код
     const code = this.generateOtpCode()
-    const expiresAt = new Date(Date.now() + this.configService.get<number>('otp.expiresIn'))
+    const expiresAt = new Date(
+      Date.now() + this.configService.get<number>('otp.expiresIn', 5 * 60 * 1000),
+    )
 
     // Проверяем, существует ли пользователь
     const user = await this.prisma.user.findUnique({
@@ -91,9 +95,13 @@ export class AuthService {
     // Эмитим событие для аналитики
     this.eventEmitter.emit('auth.otp.requested', { phone, ipAddress })
 
-    const response = {
+    const response: {
+      message: string
+      resendAfter: number
+      code?: string // Опциональное свойство
+    } = {
       message: 'OTP код отправлен',
-      resendAfter: this.configService.get<number>('otp.resendTimeout') / 1000,
+      resendAfter: this.configService.get<number>('otp.resendTimeout', 3 * 60 * 1000) / 1000,
     }
 
     // В тестовом режиме добавляем код в ответ
@@ -135,7 +143,7 @@ export class AuthService {
     }
 
     // Проверяем количество попыток
-    if (otpRecord.attemptCount >= this.configService.get<number>('otp.maxAttempts')) {
+    if (otpRecord.attemptCount >= this.configService.get<number>('otp.maxAttempts', 3)) {
       await this.prisma.otpCode.update({
         where: { id: otpRecord.id },
         data: { status: OtpStatus.EXPIRED },
@@ -330,7 +338,7 @@ export class AuthService {
 
   // Генерация OTP кода
   private generateOtpCode(): string {
-    const length = this.configService.get<number>('otp.length')
+    const length = this.configService.get<number>('otp.length') || 4 // значение по умолчанию
     const min = Math.pow(10, length - 1)
     const max = Math.pow(10, length) - 1
     return Math.floor(min + Math.random() * (max - min + 1)).toString()

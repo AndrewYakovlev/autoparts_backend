@@ -24,8 +24,8 @@ import { JwtUser } from '../auth/strategies/jwt.strategy'
 @Injectable()
 export class UsersService {
   constructor(
-    private prisma: PrismaService,
-    private eventEmitter: EventEmitter2,
+    private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // Получение профиля текущего пользователя
@@ -81,7 +81,17 @@ export class UsersService {
 
   // Получение списка пользователей (для менеджеров и администраторов)
   async getUsers(filter: GetUsersFilterDto): Promise<UsersListResponseDto> {
-    const { page, limit, sortBy, sortOrder, search, role, isActive } = filter
+    // Используем значения по умолчанию при деструктуризации
+    const {
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      search,
+      role,
+      isActive,
+    } = filter
+
     const skip = (page - 1) * limit
 
     // Формируем условия фильтрации
@@ -284,7 +294,7 @@ export class UsersService {
       total: totalUsers,
       active: activeUsers,
       inactive: totalUsers - activeUsers,
-      byRole: usersByRole.reduce((acc, item) => {
+      byRole: usersByRole.reduce<Record<string, number>>((acc, item) => {
         acc[item.role.toLowerCase()] = item._count
         return acc
       }, {}),
@@ -300,11 +310,11 @@ export class UsersService {
       id: user.id,
       phone: user.phone,
       role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+      email: user.email ?? undefined,
       isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt,
+      lastLoginAt: user.lastLoginAt ?? undefined,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }

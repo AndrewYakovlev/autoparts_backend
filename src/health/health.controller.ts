@@ -3,8 +3,8 @@
 
 import { Controller, Get } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiExcludeController } from '@nestjs/swagger'
-import { HealthCheck, HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus'
-import { PrismaService } from 'prisma/prisma.service'
+import { HealthCheck, HealthCheckService } from '@nestjs/terminus'
+import { PrismaHealthIndicator } from './prisma-health.indicator'
 import { Public } from '../auth/decorators'
 
 @ApiTags('health')
@@ -14,7 +14,6 @@ export class HealthController {
   constructor(
     private health: HealthCheckService,
     private prismaHealth: PrismaHealthIndicator,
-    private prisma: PrismaService,
   ) {}
 
   @Get()
@@ -24,7 +23,7 @@ export class HealthController {
   @ApiResponse({ status: 200, description: 'Приложение работает нормально' })
   @ApiResponse({ status: 503, description: 'Приложение недоступно' })
   check() {
-    return this.health.check([() => this.prismaHealth.pingCheck('database', this.prisma)])
+    return this.health.check([() => this.prismaHealth.pingCheck('database')])
   }
 
   @Get('ping')
