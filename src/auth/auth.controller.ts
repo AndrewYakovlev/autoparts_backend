@@ -1,8 +1,8 @@
 // src/auth/auth.controller.ts
 // Контроллер авторизации
 
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Delete } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger'
+import { Controller, Post, Body, HttpCode, HttpStatus, Delete } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger'
 import { Throttle, SkipThrottle } from '@nestjs/throttler'
 import { AuthService } from './auth.service'
 import {
@@ -17,8 +17,11 @@ import {
 import { CurrentUser, IpAddress, UserAgent, Public, Auth } from './decorators'
 import { JwtUser } from './strategies/jwt.strategy'
 import {
-  ApiWrappedCreatedResponse,
   ApiWrappedOkResponse,
+  ApiWrappedCreatedResponse,
+  ApiNoContentResponse,
+  ApiCommonErrors,
+  ApiErrorResponse,
 } from '@/common/decorators/swagger-response.decorator'
 
 @ApiTags('auth')
@@ -35,15 +38,9 @@ export class AuthController {
     description: 'Отправляет OTP код на указанный номер телефона для авторизации',
   })
   @ApiBody({ type: RequestOtpDto })
-  @ApiWrappedCreatedResponse(RequestOtpResponseDto, 'OTP код успешно отправлен')
-  @ApiResponse({
-    status: 400,
-    description: 'Некорректный номер телефона или слишком частые запросы',
-  })
-  @ApiResponse({
-    status: 429,
-    description: 'Превышен лимит запросов',
-  })
+  @ApiWrappedOkResponse(RequestOtpResponseDto, 'OTP код успешно отправлен')
+  @ApiErrorResponse(400, 'Некорректный номер телефона или слишком частые запросы')
+  @ApiErrorResponse(429, 'Превышен лимит запросов')
   async requestOtp(
     @Body() dto: RequestOtpDto,
     @IpAddress() ipAddress: string,
@@ -61,15 +58,9 @@ export class AuthController {
     description: 'Проверяет OTP код и возвращает токены доступа',
   })
   @ApiBody({ type: VerifyOtpDto })
-  @ApiWrappedCreatedResponse(AuthResponseDto, 'Успешная авторизация')
-  @ApiResponse({
-    status: 401,
-    description: 'Неверный или истекший OTP код',
-  })
-  @ApiResponse({
-    status: 429,
-    description: 'Превышен лимит попыток',
-  })
+  @ApiWrappedOkResponse(AuthResponseDto, 'Успешная авторизация')
+  @ApiErrorResponse(401, 'Неверный или истекший OTP код')
+  @ApiErrorResponse(429, 'Превышен лимит попыток')
   async verifyOtp(
     @Body() dto: VerifyOtpDto,
     @IpAddress() ipAddress: string,
@@ -87,11 +78,8 @@ export class AuthController {
     description: 'Обновляет access токен используя refresh токен',
   })
   @ApiBody({ type: RefreshTokenDto })
-  @ApiWrappedCreatedResponse(AuthResponseDto, 'Токены успешно обновлены')
-  @ApiResponse({
-    status: 401,
-    description: 'Недействительный refresh токен',
-  })
+  @ApiWrappedOkResponse(AuthResponseDto, 'Токены успешно обновлены')
+  @ApiErrorResponse(401, 'Недействительный refresh токен')
   async refreshTokens(
     @Body() dto: RefreshTokenDto,
     @IpAddress() ipAddress: string,
@@ -110,10 +98,7 @@ export class AuthController {
   })
   @ApiBody({ type: CreateAnonymousSessionDto })
   @ApiWrappedCreatedResponse(AnonymousSessionResponseDto, 'Анонимная сессия успешно создана')
-  @ApiResponse({
-    status: 429,
-    description: 'Превышен лимит создания сессий',
-  })
+  @ApiErrorResponse(429, 'Превышен лимит создания сессий')
   async createAnonymousSession(
     @Body() dto: CreateAnonymousSessionDto,
     @IpAddress() ipAddress: string,
@@ -128,14 +113,8 @@ export class AuthController {
     summary: 'Выход из системы',
     description: 'Отзывает все refresh токены пользователя',
   })
-  @ApiResponse({
-    status: 204,
-    description: 'Успешный выход из системы',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
+  @ApiNoContentResponse('Успешный выход из системы')
+  @ApiErrorResponse(401, 'Требуется авторизация')
   async logout(
     @CurrentUser() user: JwtUser,
     @Body('refreshToken') refreshToken?: string,
@@ -150,14 +129,8 @@ export class AuthController {
     summary: 'Выход со всех устройств',
     description: 'Отзывает все refresh токены пользователя на всех устройствах',
   })
-  @ApiResponse({
-    status: 204,
-    description: 'Успешный выход со всех устройств',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
+  @ApiNoContentResponse('Успешный выход со всех устройств')
+  @ApiErrorResponse(401, 'Требуется авторизация')
   async logoutAll(@CurrentUser() user: JwtUser): Promise<void> {
     await this.authService.logout(user.id)
   }

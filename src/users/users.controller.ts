@@ -13,16 +13,10 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
-import { Role } from '@prisma/client';
-import { UsersService } from './users.service';
+} from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger'
+import { Role } from '@prisma/client'
+import { UsersService } from './users.service'
 import {
   CreateUserDto,
   UpdateUserDto,
@@ -30,14 +24,17 @@ import {
   GetUsersFilterDto,
   UserResponseDto,
   UsersListResponseDto,
-} from './dto/users.dto';
+  UserStatsResponseDto,
+} from './dto'
+import { Auth, CurrentUser, AdminOnly, ManagerAccess } from '../auth/decorators'
+import { JwtUser } from '../auth/strategies/jwt.strategy'
 import {
-  Auth,
-  CurrentUser,
-  AdminOnly,
-  ManagerAccess,
-} from '../auth/decorators';
-import { JwtUser } from '../auth/strategies/jwt.strategy';
+  ApiWrappedOkResponse,
+  ApiWrappedCreatedResponse,
+  ApiNoContentResponse,
+  ApiCommonErrors,
+  ApiErrorResponse,
+} from '@/common/decorators/swagger-response.decorator'
 
 @ApiTags('users')
 @Controller('users')
@@ -52,21 +49,11 @@ export class UsersController {
     summary: 'Получение своего профиля',
     description: 'Возвращает профиль текущего авторизованного пользователя',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Профиль пользователя',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Анонимные пользователи не имеют профиля',
-  })
+  @ApiWrappedOkResponse(UserResponseDto, 'Профиль пользователя')
+  @ApiErrorResponse(401, 'Требуется авторизация')
+  @ApiErrorResponse(403, 'Анонимные пользователи не имеют профиля')
   async getMyProfile(@CurrentUser() user: JwtUser): Promise<UserResponseDto> {
-    return this.usersService.getMyProfile(user);
+    return this.usersService.getMyProfile(user)
   }
 
   @Put('profile')
@@ -75,32 +62,13 @@ export class UsersController {
     summary: 'Обновление своего профиля',
     description: 'Обновляет профиль текущего авторизованного пользователя',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Обновленный профиль',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Некорректные данные',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Анонимные пользователи не могут обновлять профиль',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Email уже используется',
-  })
+  @ApiWrappedOkResponse(UserResponseDto, 'Обновленный профиль')
+  @ApiCommonErrors([400, 401, 403, 409])
   async updateMyProfile(
     @CurrentUser() user: JwtUser,
     @Body() dto: UpdateProfileDto,
   ): Promise<UserResponseDto> {
-    return this.usersService.updateMyProfile(user, dto);
+    return this.usersService.updateMyProfile(user, dto)
   }
 
   // Эндпоинты для управления пользователями (для менеджеров и администраторов)
@@ -113,59 +81,22 @@ export class UsersController {
       'Возвращает список пользователей с фильтрацией и пагинацией. Доступно для менеджеров и администраторов.',
   })
   @ApiQuery({ type: GetUsersFilterDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Список пользователей',
-    type: UsersListResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Недостаточно прав доступа',
-  })
-  async getUsers(
-    @Query() filter: GetUsersFilterDto,
-  ): Promise<UsersListResponseDto> {
-    return this.usersService.getUsers(filter);
+  @ApiWrappedOkResponse(UsersListResponseDto, 'Список пользователей с пагинацией')
+  @ApiCommonErrors([401, 403])
+  async getUsers(@Query() filter: GetUsersFilterDto): Promise<UsersListResponseDto> {
+    return this.usersService.getUsers(filter)
   }
 
   @Get('stats')
   @AdminOnly()
   @ApiOperation({
     summary: 'Статистика пользователей',
-    description:
-      'Возвращает статистику по пользователям. Доступно только для администраторов.',
+    description: 'Возвращает статистику по пользователям. Доступно только для администраторов.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Статистика пользователей',
-    schema: {
-      example: {
-        total: 100,
-        active: 85,
-        inactive: 15,
-        byRole: {
-          customer: 80,
-          manager: 15,
-          admin: 5,
-        },
-        recentRegistrations: 25,
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Доступно только для администраторов',
-  })
-  async getUsersStats() {
-    return this.usersService.getUsersStats();
+  @ApiWrappedOkResponse(UserStatsResponseDto, 'Статистика пользователей')
+  @ApiCommonErrors([401, 403])
+  async getUsersStats(): Promise<UserStatsResponseDto> {
+    return this.usersService.getUsersStats()
   }
 
   @Post()
@@ -173,32 +104,12 @@ export class UsersController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Создание пользователя',
-    description:
-      'Создает нового пользователя. Доступно только для администраторов.',
+    description: 'Создает нового пользователя. Доступно только для администраторов.',
   })
-  @ApiResponse({
-    status: 201,
-    description: 'Пользователь успешно создан',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Некорректные данные',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Доступно только для администраторов',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Пользователь с таким телефоном или email уже существует',
-  })
+  @ApiWrappedCreatedResponse(UserResponseDto, 'Пользователь успешно создан')
+  @ApiCommonErrors([400, 401, 403, 409])
   async createUser(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
-    return this.usersService.createUser(dto);
+    return this.usersService.createUser(dto)
   }
 
   @Get(':id')
@@ -213,73 +124,34 @@ export class UsersController {
     description: 'UUID пользователя',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Информация о пользователе',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Недостаточно прав доступа',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Пользователь не найден',
-  })
+  @ApiWrappedOkResponse(UserResponseDto, 'Информация о пользователе')
+  @ApiCommonErrors([401, 403, 404])
   async getUserById(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser,
   ): Promise<UserResponseDto> {
-    return this.usersService.getUserById(id, user);
+    return this.usersService.getUserById(id, user)
   }
 
   @Put(':id')
   @ManagerAccess()
   @ApiOperation({
     summary: 'Обновление пользователя',
-    description:
-      'Обновляет данные пользователя. Менеджеры не могут изменять роли.',
+    description: 'Обновляет данные пользователя. Менеджеры не могут изменять роли.',
   })
   @ApiParam({
     name: 'id',
     description: 'UUID пользователя',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Обновленная информация о пользователе',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Некорректные данные или попытка изменить свою роль',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Недостаточно прав доступа',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Пользователь не найден',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Email уже используется',
-  })
+  @ApiWrappedOkResponse(UserResponseDto, 'Обновленная информация о пользователе')
+  @ApiCommonErrors([400, 401, 403, 404, 409])
   async updateUser(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
     @CurrentUser() user: JwtUser,
   ): Promise<UserResponseDto> {
-    return this.usersService.updateUser(id, dto, user);
+    return this.usersService.updateUser(id, dto, user)
   }
 
   @Delete(':id')
@@ -295,30 +167,12 @@ export class UsersController {
     description: 'UUID пользователя',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponse({
-    status: 204,
-    description: 'Пользователь успешно удален',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Попытка удалить свой аккаунт',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Требуется авторизация',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Доступно только для администраторов',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Пользователь не найден',
-  })
+  @ApiNoContentResponse('Пользователь успешно удален')
+  @ApiCommonErrors([400, 401, 403, 404])
   async deleteUser(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: JwtUser,
   ): Promise<void> {
-    return this.usersService.deleteUser(id, user);
+    return this.usersService.deleteUser(id, user)
   }
 }
