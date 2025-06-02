@@ -16,6 +16,10 @@ import {
 } from './dto/auth.dto'
 import { CurrentUser, IpAddress, UserAgent, Public, Auth } from './decorators'
 import { JwtUser } from './strategies/jwt.strategy'
+import {
+  ApiWrappedCreatedResponse,
+  ApiWrappedOkResponse,
+} from '@/common/decorators/swagger-response.decorator'
 
 @ApiTags('auth')
 @Controller('auth')
@@ -31,11 +35,7 @@ export class AuthController {
     description: 'Отправляет OTP код на указанный номер телефона для авторизации',
   })
   @ApiBody({ type: RequestOtpDto })
-  @ApiResponse({
-    status: 200,
-    description: 'OTP код успешно отправлен',
-    type: RequestOtpResponseDto,
-  })
+  @ApiWrappedCreatedResponse(RequestOtpResponseDto, 'OTP код успешно отправлен')
   @ApiResponse({
     status: 400,
     description: 'Некорректный номер телефона или слишком частые запросы',
@@ -61,11 +61,7 @@ export class AuthController {
     description: 'Проверяет OTP код и возвращает токены доступа',
   })
   @ApiBody({ type: VerifyOtpDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Успешная авторизация',
-    type: AuthResponseDto,
-  })
+  @ApiWrappedCreatedResponse(AuthResponseDto, 'Успешная авторизация')
   @ApiResponse({
     status: 401,
     description: 'Неверный или истекший OTP код',
@@ -91,11 +87,7 @@ export class AuthController {
     description: 'Обновляет access токен используя refresh токен',
   })
   @ApiBody({ type: RefreshTokenDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Токены успешно обновлены',
-    type: AuthResponseDto,
-  })
+  @ApiWrappedCreatedResponse(AuthResponseDto, 'Токены успешно обновлены')
   @ApiResponse({
     status: 401,
     description: 'Недействительный refresh токен',
@@ -117,11 +109,7 @@ export class AuthController {
     description: 'Создает анонимную сессию для неавторизованных пользователей',
   })
   @ApiBody({ type: CreateAnonymousSessionDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Анонимная сессия успешно создана',
-    type: AnonymousSessionResponseDto,
-  })
+  @ApiWrappedCreatedResponse(AnonymousSessionResponseDto, 'Анонимная сессия успешно создана')
   @ApiResponse({
     status: 429,
     description: 'Превышен лимит создания сессий',
