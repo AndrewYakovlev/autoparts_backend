@@ -1,18 +1,10 @@
 // src/auth/auth.controller.ts
 // Контроллер авторизации
 
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-  Delete,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
-import { AuthService } from './auth.service';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Delete } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger'
+import { Throttle, SkipThrottle } from '@nestjs/throttler'
+import { AuthService } from './auth.service'
 import {
   RequestOtpDto,
   VerifyOtpDto,
@@ -21,9 +13,9 @@ import {
   AuthResponseDto,
   RequestOtpResponseDto,
   AnonymousSessionResponseDto,
-} from './dto/auth.dto';
-import { CurrentUser, IpAddress, UserAgent, Public, Auth } from './decorators';
-import { JwtUser } from './strategies/jwt.strategy';
+} from './dto/auth.dto'
+import { CurrentUser, IpAddress, UserAgent, Public, Auth } from './decorators'
+import { JwtUser } from './strategies/jwt.strategy'
 
 @ApiTags('auth')
 @Controller('auth')
@@ -36,8 +28,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Запрос OTP кода',
-    description:
-      'Отправляет OTP код на указанный номер телефона для авторизации',
+    description: 'Отправляет OTP код на указанный номер телефона для авторизации',
   })
   @ApiBody({ type: RequestOtpDto })
   @ApiResponse({
@@ -58,7 +49,7 @@ export class AuthController {
     @IpAddress() ipAddress: string,
     @UserAgent() userAgent: string,
   ): Promise<RequestOtpResponseDto> {
-    return this.authService.requestOtp(dto, ipAddress, userAgent);
+    return this.authService.requestOtp(dto, ipAddress, userAgent)
   }
 
   @Post('otp/verify')
@@ -88,7 +79,7 @@ export class AuthController {
     @IpAddress() ipAddress: string,
     @UserAgent() userAgent: string,
   ): Promise<AuthResponseDto> {
-    return this.authService.verifyOtp(dto, ipAddress, userAgent);
+    return this.authService.verifyOtp(dto, ipAddress, userAgent)
   }
 
   @Post('token/refresh')
@@ -114,7 +105,7 @@ export class AuthController {
     @IpAddress() ipAddress: string,
     @UserAgent() userAgent: string,
   ): Promise<AuthResponseDto> {
-    return this.authService.refreshTokens(dto, ipAddress, userAgent);
+    return this.authService.refreshTokens(dto, ipAddress, userAgent)
   }
 
   @Post('anonymous')
@@ -139,7 +130,7 @@ export class AuthController {
     @Body() dto: CreateAnonymousSessionDto,
     @IpAddress() ipAddress: string,
   ): Promise<AnonymousSessionResponseDto> {
-    return this.authService.createAnonymousSession(dto, ipAddress);
+    return this.authService.createAnonymousSession(dto, ipAddress)
   }
 
   @Delete('logout')
@@ -161,7 +152,7 @@ export class AuthController {
     @CurrentUser() user: JwtUser,
     @Body('refreshToken') refreshToken?: string,
   ): Promise<void> {
-    await this.authService.logout(user.id, refreshToken);
+    await this.authService.logout(user.id, refreshToken)
   }
 
   @Post('logout/all')
@@ -180,6 +171,6 @@ export class AuthController {
     description: 'Требуется авторизация',
   })
   async logoutAll(@CurrentUser() user: JwtUser): Promise<void> {
-    await this.authService.logout(user.id);
+    await this.authService.logout(user.id)
   }
 }
